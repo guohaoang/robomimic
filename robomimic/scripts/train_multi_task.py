@@ -112,7 +112,7 @@ def train_multi_taks(config, device):
                 render_offscreen=config.experiment.render_video,
                 use_image_obs=shape_meta["use_images"], 
             )
-            wrapped_env = MultiTaskEnvWrapper.EnvRobosuiteWithTask(env, TYPE_TO_TASK_ID['better'])
+            # wrapped_env = MultiTaskEnvWrapper.EnvRobosuiteWithTask(env, TYPE_TO_TASK_ID['better'])
             envs[env.name] = wrapped_env
             print(envs[env.name])
 
