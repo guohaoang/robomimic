@@ -81,7 +81,7 @@ def get_config(dataset_path=None, output_dir=None, debug=False):
 
     ## evaluation rollout config ##
     config.experiment.rollout.enabled = True                    # enable evaluation rollouts
-    config.experiment.rollout.n = 20                            # number of rollouts per evaluation
+    config.experiment.rollout.n = 30                            # number of rollouts per evaluation
     config.experiment.rollout.horizon = 400                     # maximum number of env steps per rollout
     config.experiment.rollout.rate = 200                         # do rollouts every @rate epochs
     config.experiment.rollout.warmstart = 0                     # number of epochs to wait before starting rollouts
