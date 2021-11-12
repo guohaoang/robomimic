@@ -113,7 +113,7 @@ def train_multi_taks(config, device):
                 use_image_obs=shape_meta["use_images"], 
             )
             # wrapped_env = MultiTaskEnvWrapper.EnvRobosuiteWithTask(env, TYPE_TO_TASK_ID['better'])
-            envs[env.name] = wrapped_env
+            envs[env.name] = env
             print(envs[env.name])
 
     print("")
