@@ -59,7 +59,7 @@ def get_config(dataset_path=None, output_dir=None, debug=False):
     ## save config - if and when to save checkpoints ##
     config.experiment.save.enabled = True                       # whether model saving should be enabled or disabled
     config.experiment.save.every_n_seconds = None               # save model every n seconds (set to None to disable)
-    config.experiment.save.every_n_epochs = 50                 # save model every n epochs (set to None to disable)
+    config.experiment.save.every_n_epochs = 500                 # save model every n epochs (set to None to disable)
     config.experiment.save.epochs = []                          # save model on these specific epochs
     config.experiment.save.on_best_validation = False           # save models that achieve best validation score
     config.experiment.save.on_best_rollout_return = False       # save models that achieve best rollout return
@@ -75,7 +75,7 @@ def get_config(dataset_path=None, output_dir=None, debug=False):
 
     ## rendering config ##
     config.experiment.render = False                            # render on-screen or not
-    config.experiment.render_video = False                      # render evaluation rollouts to videos
+    config.experiment.render_video = True                      # render evaluation rollouts to videos
     config.experiment.keep_all_videos = False                   # save all videos, instead of only saving those for saved model checkpoints
     config.experiment.video_skip = 5                            # render video frame every n environment steps during rollout
 
@@ -83,7 +83,7 @@ def get_config(dataset_path=None, output_dir=None, debug=False):
     config.experiment.rollout.enabled = True                    # enable evaluation rollouts
     config.experiment.rollout.n = 10                            # number of rollouts per evaluation
     config.experiment.rollout.horizon = 400                     # maximum number of env steps per rollout
-    config.experiment.rollout.rate = 50                         # do rollouts every @rate epochs
+    config.experiment.rollout.rate = 500                         # do rollouts every @rate epochs
     config.experiment.rollout.warmstart = 0                     # number of epochs to wait before starting rollouts
     config.experiment.rollout.terminate_on_success = True       # end rollout early after task success
 
