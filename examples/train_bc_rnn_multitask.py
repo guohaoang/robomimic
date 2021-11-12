@@ -59,7 +59,7 @@ def get_config(dataset_path=None, output_dir=None, debug=False):
     ## save config - if and when to save checkpoints ##
     config.experiment.save.enabled = True                       # whether model saving should be enabled or disabled
     config.experiment.save.every_n_seconds = None               # save model every n seconds (set to None to disable)
-    config.experiment.save.every_n_epochs = 50                  # save model every n epochs (set to None to disable)
+    config.experiment.save.every_n_epochs = 200                 # save model every n epochs (set to None to disable)
     config.experiment.save.epochs = []                          # save model on these specific epochs
     config.experiment.save.on_best_validation = False           # save models that achieve best validation score
     config.experiment.save.on_best_rollout_return = False       # save models that achieve best rollout return
