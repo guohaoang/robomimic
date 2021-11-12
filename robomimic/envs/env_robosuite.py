@@ -82,6 +82,9 @@ class EnvRobosuite(EB.EnvBase):
         self._init_kwargs = deepcopy(kwargs)
         self.env = robosuite.make(self._env_name, **kwargs)
 
+        self.add_task_id = False
+        self.task_id = None
+
         if self._is_v1:
             # Make sure joint position observations and eef vel observations are active
             for ob_name in self.env.observation_names:
@@ -203,6 +206,8 @@ class EnvRobosuite(EB.EnvBase):
             ret["eef_pos"] = np.array(di["eef_pos"])
             ret["eef_quat"] = np.array(di["eef_quat"])
             ret["gripper_qpos"] = np.array(di["gripper_qpos"])
+        if self.add_task_id:
+            ret["task_id"] = np.array(self.task_id, dtype=np.float)
         return ret
 
     def get_state(self):
