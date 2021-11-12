@@ -75,7 +75,7 @@ def get_config(dataset_path=None, output_dir=None, debug=False):
 
     ## rendering config ##
     config.experiment.render = False                            # render on-screen or not
-    config.experiment.render_video = True                       # render evaluation rollouts to videos
+    config.experiment.render_video = False                      # render evaluation rollouts to videos
     config.experiment.keep_all_videos = False                   # save all videos, instead of only saving those for saved model checkpoints
     config.experiment.video_skip = 5                            # render video frame every n environment steps during rollout
 
