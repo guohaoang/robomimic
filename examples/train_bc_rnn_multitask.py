@@ -51,7 +51,7 @@ def get_config(dataset_path=None, output_dir=None, debug=False):
     config = config_factory(algo_name="bc")
 
     ### Experiment Config ###
-    config.experiment.name = "bc_rnn_example"                   # name of experiment used to make log files
+    config.experiment.name = "bc_rnn_multi_task"                # name of experiment used to make log files
     config.experiment.validate = True                           # whether to do validation or not
     config.experiment.logging.terminal_output_to_txt = False    # whether to log stdout to txt file 
     config.experiment.logging.log_tb = True                     # enable tensorboard logging
@@ -81,9 +81,9 @@ def get_config(dataset_path=None, output_dir=None, debug=False):
 
     ## evaluation rollout config ##
     config.experiment.rollout.enabled = True                    # enable evaluation rollouts
-    config.experiment.rollout.n = 50                            # number of rollouts per evaluation
+    config.experiment.rollout.n = 10                            # number of rollouts per evaluation
     config.experiment.rollout.horizon = 400                     # maximum number of env steps per rollout
-    config.experiment.rollout.rate = 50                         # do rollouts every @rate epochs
+    config.experiment.rollout.rate = 200                         # do rollouts every @rate epochs
     config.experiment.rollout.warmstart = 0                     # number of epochs to wait before starting rollouts
     config.experiment.rollout.terminate_on_success = True       # end rollout early after task success
 
