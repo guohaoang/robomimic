@@ -49,7 +49,7 @@ TYPE_TO_TASK_ID = {'worse':[0,0,1], 'okay':[0,1,0], 'better':[1,0,0]}
 def get_shape_meta_with_task_id(shape_meta):
     new_shape_meta = shape_meta.copy()
     new_shape_meta['all_shapes'][TASK_ID_KEY] = TASK_ID_SHAPE
-    new_shape_meta['all_modalities'].append(all_modalities)
+    new_shape_meta['all_modalities'].append(TASK_ID_KEY)
     return new_shape_meta
 
 def train_multi_taks(config, device):
