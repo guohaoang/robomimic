@@ -35,7 +35,7 @@
   },
   "train": {
     "data": "datasets/can/mh/low_dim_fewer_better.hdf5",
-    "output_dir": "robomimic/logs/fewer_better_demo/",
+    "output_dir": "logs/fewer_better_demo/",
     "num_data_workers": 0,
     "hdf5_cache_mode": "all",
     "hdf5_use_swmr": true,
