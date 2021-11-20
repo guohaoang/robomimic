@@ -217,6 +217,53 @@ class MLP(Module):
         return msg
 
 
+class LSTM_MULTIPLY(Module):
+
+    def __init__(
+        self,
+        input_size,
+        hidden_size,
+        mult_split_index,
+        num_layers,
+        *args,
+        **kwargs
+    ):
+        super(LSTM_MULTIPLY, self).__init__()
+
+        assert (num_layers % 2) == 0
+        num_layers_per = int(num_layers / 2)
+
+        self.net1 = nn.LSTM(
+            input_size=input_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers_per,
+            *args,
+            **kwargs,
+        )
+
+        mult_input_size = input_size - mult_split_index
+        hidden_mult_layers = []
+        self.mult_net = MLP(mult_input_size, hidden_size, hidden_mult_layers, output_activation=None)
+        self.mult_split_index = mult_split_index
+
+        self.net2 = nn.LSTM(
+            input_size=hidden_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers_per,
+            *args,
+            **kwargs,
+        )
+
+        self.init_state_split_index = kwargs.get("bidirectional", False) + 1
+
+    def forward(self, inputs, rnn_init_state):
+        rnn_init_state_1 = tuple(state[:self.init_state_split_index] for state in rnn_init_state)
+        rnn_init_state_2 = tuple(state[self.init_state_split_index:] for state in rnn_init_state)
+        output1, states1 = self.net1(inputs, rnn_init_state_1)
+        task_scaling = self.mult_net(inputs[:, :, self.mult_split_index:])
+        output2, states2 = self.net2(output1 * task_scaling, rnn_init_state_2)
+        return output2, (torch.cat((states1[0], states2[0]), dim=0), torch.cat((states1[1], states2[1]), dim=0))
+
 class RNN_Base(Module):
     """
     A wrapper class for a multi-step RNN and a per-step network.
@@ -249,8 +296,15 @@ class RNN_Base(Module):
         if per_step_net is not None:
             assert isinstance(per_step_net, Module), "RNN_Base: per_step_net is not instance of Module"
 
-        assert rnn_type in ["LSTM", "GRU"]
-        rnn_cls = nn.LSTM if rnn_type == "LSTM" else nn.GRU
+        assert rnn_type in ["LSTM", "GRU", "LSTM_MULTIPLY"]
+
+        if rnn_type == "LSTM_MULTIPLY":
+            rnn_cls = LSTM_MULTIPLY
+        elif rnn_type == "LSTM":
+            rnn_cls = nn.LSTM
+        else:
+            rnn_class = nn.GRU
+
         rnn_kwargs = rnn_kwargs if rnn_kwargs is not None else {}
         rnn_is_bidirectional = rnn_kwargs.get("bidirectional", False)
 
@@ -284,7 +338,7 @@ class RNN_Base(Module):
                 depending on the RNN type
         """
         h_0 = torch.zeros(self._num_layers * self._num_directions, batch_size, self._hidden_dim).to(device)
-        if self._rnn_type == "LSTM":
+        if self._rnn_type == "LSTM" or "LSTM_MULTIPLY":
             c_0 = torch.zeros(self._num_layers * self._num_directions, batch_size, self._hidden_dim).to(device)
             return h_0, c_0
         else:
@@ -336,6 +390,7 @@ class RNN_Base(Module):
             rnn_init_state = self.get_rnn_init_state(batch_size, device=inputs.device)
 
         outputs, rnn_state = self.nets(inputs, rnn_init_state)
+
         if self.per_step_net is not None:
             outputs = TensorUtils.time_distributed(outputs, self.per_step_net)
 
