@@ -71,10 +71,7 @@
       "l1_weight": 0.0,
       "cos_weight": 0.0
     },
-    "actor_layer_dims": [
-      1024,
-      1024
-    ],
+    "actor_layer_dims": [],
     "gaussian": {
       "enabled": false,
       "fixed_std": false,
