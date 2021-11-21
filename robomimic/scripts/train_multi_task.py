@@ -52,7 +52,7 @@ def get_shape_meta_with_task_id(shape_meta):
     new_shape_meta['all_modalities'].append(TASK_ID_KEY)
     return new_shape_meta
 
-def train_multi_taks(config, device):
+def train(config, device):
     """
     Train a model using the algorithm.
     """
@@ -333,6 +333,9 @@ def main(args):
     if args.name is not None:
         config.experiment.name = args.name
 
+    if args.rnn_type is not None:
+        config.algo.rnn.rnn_type = args.rnn_type
+
     # get torch device
     device = TorchUtils.get_torch_device(try_to_use_cuda=config.train.cuda)
 
@@ -407,6 +410,14 @@ if __name__ == "__main__":
         "--debug",
         action='store_true',
         help="set this flag to run a quick training run for debugging purposes"
+    )
+
+    # Dataset path, to override the one in the config
+    parser.add_argument(
+        "--rnn_type",
+        type=str,
+        default=None,
+        help="(optional) if provided, override the rnn architecture defined in the config",
     )
 
     args = parser.parse_args()

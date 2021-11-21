@@ -12,6 +12,7 @@ import numpy as np
 import textwrap
 from copy import deepcopy
 from collections import OrderedDict
+from functools import partial
 
 import torch
 import torch.nn as nn
@@ -516,6 +517,59 @@ class ObservationGroupEncoder(Module):
         msg = header + '(' + msg + '\n)'
         return msg
 
+class ObservationWithSplitGroupEncoder(Module):
+    def __init__(
+        self,
+        observation_group_shapes,
+        split_group,
+        split_comp,
+        *args,
+        **kwargs
+    ):
+        super(ObservationWithSplitGroupEncoder, self).__init__()
+
+        input_obs_group_shapes = deepcopy(observation_group_shapes)
+
+        assert split_group in input_obs_group_shapes
+        assert split_comp in input_obs_group_shapes[split_group]
+
+        split_obs_group_shapes = OrderedDict()
+        split_obs_group_shapes[split_group] = OrderedDict()
+        split_obs_group_shapes[split_group][split_comp] = input_obs_group_shapes[split_group].pop(split_comp)
+
+        self.input_encoder = ObservationGroupEncoder(
+            observation_group_shapes=input_obs_group_shapes,
+            *args,
+            **kwargs,
+        )
+
+        self.split_encoder = ObservationGroupEncoder(
+            observation_group_shapes=split_obs_group_shapes,
+            *args,
+            **kwargs,
+        )
+
+        self.split_group = split_group
+        self.split_comp = split_comp
+
+    def output_shape(self):
+        return [self.input_encoder.output_shape()[0] + self.split_encoder.output_shape()[0]]
+
+    def split_index(self):
+        return self.input_encoder.output_shape()[0]
+
+    def forward(self, **inputs):
+        assert self.split_group in inputs
+        assert self.split_comp in inputs[self.split_group]
+
+        task_inputs = OrderedDict()
+        task_inputs[self.split_group] = OrderedDict()
+        task_inputs[self.split_group][self.split_comp] = inputs[self.split_group].pop(self.split_comp)
+
+        return torch.cat(
+            (self.input_encoder.forward(**inputs), self.split_encoder.forward(**task_inputs)), 
+            dim=-1
+        )
 
 class MIMO_MLP(Module):
     """
@@ -578,6 +632,7 @@ class MIMO_MLP(Module):
             spatial_softmax_kwargs (dict): arguments to pass to spatial softmax layer
         """
         super(MIMO_MLP, self).__init__()
+
 
         assert isinstance(input_obs_group_shapes, OrderedDict)
         assert np.all([isinstance(input_obs_group_shapes[k], OrderedDict) for k in input_obs_group_shapes])
@@ -741,9 +796,15 @@ class RNN_MIMO_MLP(Module):
 
         self.nets = nn.ModuleDict()
 
+        if rnn_type == "LSTM_MULTIPLY":
+            assert "task_id" in self.input_obs_group_shapes["obs"]
+            obs_encoder_cls = partial(ObservationWithSplitGroupEncoder, split_group="obs", split_comp="task_id")
+        else:
+            obs_encoder_cls = ObservationGroupEncoder
+
         # Encoder for all observation groups.
-        self.nets["encoder"] = ObservationGroupEncoder(
-            observation_group_shapes=input_obs_group_shapes,
+        self.nets["encoder"] = obs_encoder_cls(
+            observation_group_shapes=self.input_obs_group_shapes,
             visual_feature_dimension=visual_feature_dimension,
             visual_core_class=visual_core_class,
             visual_core_kwargs=visual_core_kwargs,
@@ -752,6 +813,9 @@ class RNN_MIMO_MLP(Module):
             use_spatial_softmax=use_spatial_softmax,
             spatial_softmax_kwargs=spatial_softmax_kwargs,
         )
+
+        if rnn_type == "LSTM_MULTIPLY":
+            rnn_kwargs['mult_split_index'] = self.nets["encoder"].split_index()
 
         # flat encoder output dimension
         rnn_input_dim = self.nets["encoder"].output_shape()[0]
@@ -808,7 +872,8 @@ class RNN_MIMO_MLP(Module):
             hidden_state (torch.Tensor or tuple): returns hidden state tensor or tuple of hidden state tensors
                 depending on the RNN type
         """
-        return self.nets["rnn"].get_rnn_init_state(batch_size, device=device)
+        x= self.nets["rnn"].get_rnn_init_state(batch_size, device=device)
+        return x
 
     def output_shape(self, input_shape):
         """
