@@ -22,7 +22,7 @@ import robomimic
 import robomimic.utils.torch_utils as TorchUtils
 import robomimic.utils.test_utils as TestUtils
 from robomimic.config import config_factory
-from robomimic.scripts.train_multi_task import train_multi_taks
+from robomimic.scripts.train_multi_task import train
 
 
 def get_config(dataset_path=None, output_dir=None, debug=False):
@@ -257,4 +257,4 @@ if __name__ == "__main__":
     device = TorchUtils.get_torch_device(try_to_use_cuda=config.train.cuda)
 
     # run training
-    train_multi_taks(config, device=device)
+    train(config, device=device)
