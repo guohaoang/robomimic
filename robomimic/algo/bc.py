@@ -13,6 +13,7 @@ import robomimic.models.policy_nets as PolicyNets
 import robomimic.models.vae_nets as VAENets
 import robomimic.utils.loss_utils as LossUtils
 import robomimic.utils.tensor_utils as TensorUtils
+import robomimic.utils.pc_grad as PCGrad
 import robomimic.utils.torch_utils as TorchUtils
 
 from robomimic.algo import register_algo_factory_func, PolicyAlgo
@@ -114,7 +115,7 @@ class BC(PolicyAlgo):
             info["losses"] = TensorUtils.detach(losses)
 
             if not validate:
-                step_info = self._train_step(losses)
+                step_info = self._train_step(losses, predictions, batch=batch)
                 info.update(step_info)
 
         return info
@@ -166,7 +167,7 @@ class BC(PolicyAlgo):
         losses["action_loss"] = action_loss
         return losses
 
-    def _train_step(self, losses):
+    def _train_step(self, losses, predictions, batch=None):
         """
         Internal helper function for BC algo class. Perform backpropagation on the
         loss tensors in @losses to update networks.
@@ -174,15 +175,32 @@ class BC(PolicyAlgo):
         Args:
             losses (dict): dictionary of losses computed over the batch, from @_compute_losses
         """
+        if batch:
+            good_loss = - predictions['log_probs'][batch['obs']['task_id'][:, :, 2] == 1]
+            medium_loss = - predictions['log_probs'][batch['obs']['task_id'][:, :, 1] == 1]
+            bad_loss = - predictions['log_probs'][batch['obs']['task_id'][:, :, 0] == 1]
+
+        info = OrderedDict()
+        good_norm = TorchUtils.backprop_for_loss(
+            net=self.nets["policy"],
+            optim=PCGrad.PCGrad(self.optimizers["policy"]),
+            loss=[good_loss.mean()*len(good_loss)/1000, medium_loss.mean()*len(medium_loss)/1000, bad_loss.mean()*len(bad_loss)/1000],
+            retain_graph=True,
+        )
+        #medium_norm = TorchUtils.backprop_for_loss(
+        #    net=self.nets["policy"],
+        #    optim=self.optimizers["policy"],
+        #    loss=medium_loss.mean(),
+        #    retain_graph=True,
+        #)
+        #bad_norm = TorchUtils.backprop_for_loss(
+        #    net=self.nets["policy"],
+        #    optim=self.optimizers["policy"],
+        #    loss=bad_loss.mean(),
+        #)
 
         # gradient step
-        info = OrderedDict()
-        policy_grad_norms = TorchUtils.backprop_for_loss(
-            net=self.nets["policy"],
-            optim=self.optimizers["policy"],
-            loss=losses["action_loss"],
-        )
-        info["policy_grad_norms"] = policy_grad_norms
+        info["policy_grad_norms"] = good_norm
         return info
 
     def log_info(self, info):

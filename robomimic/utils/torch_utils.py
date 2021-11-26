@@ -158,8 +158,7 @@ def backprop_for_loss(net, optim, loss, max_grad_norm=None, retain_graph=False):
     """
 
     # backprop
-    optim.zero_grad()
-    loss.backward(retain_graph=retain_graph)
+    optim.pc_backward(loss)
 
     # gradient clipping
     if max_grad_norm is not None:
